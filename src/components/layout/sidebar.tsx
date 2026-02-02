@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Separator } from '@/components/ui/separator';
 
 const NAV = [
     { href: '/dashboard', label: 'Dashboard' },
@@ -16,26 +15,27 @@ export default function Sidebar() {
     const pathname = usePathname();
 
     return (
-        <aside className="w-56 px-4 py-6 sticky top-0 h-screen hidden md:block">
+        <div className="space-y-8">
+            {/* Brand */}
             <div className="space-y-1">
-                <p className="text-sm font-semibold tracking-tight">StoreOps</p>
-                <p className="text-xs text-muted-foreground">Admin Console</p>
+                <div className="text-base font-semibold leading-none">StoreOps</div>
+                <div className="text-sm text-muted-foreground">Admin Console</div>
             </div>
 
-            <Separator className="my-5" />
-
+            {/* Nav */}
             <nav className="space-y-1">
                 {NAV.map((item) => {
                     const active = pathname === item.href;
+
                     return (
                         <Link
                             key={item.href}
                             href={item.href}
                             className={[
-                                'block rounded-md px-3 py-2 text-sm',
+                                'block rounded-md px-3 py-2 text-sm transition-colors',
                                 active
-                                    ? 'bg-muted font-medium'
-                                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/60',
+                                    ? 'bg-muted text-foreground font-medium'
+                                    : 'text-foreground/70 hover:text-foreground hover:bg-muted/60',
                             ].join(' ')}
                         >
                             {item.label}
@@ -43,6 +43,6 @@ export default function Sidebar() {
                     );
                 })}
             </nav>
-        </aside>
+        </div>
     );
 }
