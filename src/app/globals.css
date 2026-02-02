@@ -1,26 +1,96 @@
-@import "tailwindcss";
+@import 'tailwindcss';
+@config "../../tailwind.config.ts";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@layer base {
+    :root {
+        --background: 0 0% 100%;
+        --foreground: 240 10% 3.9%;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+        --card: 0 0% 100%;
+        --card-foreground: 240 10% 3.9%;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+        --popover: 0 0% 100%;
+        --popover-foreground: 240 10% 3.9%;
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+        /* 포인트 컬러는 과하지 않게(거의 블랙) */
+        --primary: 240 5.9% 10%;
+        --primary-foreground: 0 0% 98%;
+
+        /* 미니멀 UI에서 가장 많이 쓰는 톤 */
+        --secondary: 240 4.8% 95.9%;
+        --secondary-foreground: 240 5.9% 10%;
+
+        --muted: 240 4.8% 95.9%;
+        --muted-foreground: 240 3.8% 46.1%;
+
+        --accent: 240 4.8% 95.9%;
+        --accent-foreground: 240 5.9% 10%;
+
+        --destructive: 0 84.2% 60.2%;
+        --destructive-foreground: 0 0% 98%;
+
+        /* “경계선 너무 진하면 싸보임” → 연하게 */
+        --border: 240 5.9% 90%;
+        --input: 240 5.9% 90%;
+
+        /* 포커스 링도 얇고 은은하게 */
+        --ring: 240 5.9% 10%;
+
+        /* 토스 느낌: 둥글지만 과하지 않게 */
+        --radius: 0.75rem;
+    }
+
+    .dark {
+        --background: 240 10% 3.9%;
+        --foreground: 0 0% 98%;
+
+        --card: 240 10% 3.9%;
+        --card-foreground: 0 0% 98%;
+
+        --popover: 240 10% 3.9%;
+        --popover-foreground: 0 0% 98%;
+
+        --primary: 0 0% 98%;
+        --primary-foreground: 240 5.9% 10%;
+
+        --secondary: 240 3.7% 15.9%;
+        --secondary-foreground: 0 0% 98%;
+
+        --muted: 240 3.7% 15.9%;
+        --muted-foreground: 240 5% 64.9%;
+
+        --accent: 240 3.7% 15.9%;
+        --accent-foreground: 0 0% 98%;
+
+        --destructive: 0 62.8% 30.6%;
+        --destructive-foreground: 0 0% 98%;
+
+        --border: 240 3.7% 15.9%;
+        --input: 240 3.7% 15.9%;
+        --ring: 240 4.9% 83.9%;
+    }
+
+    * {
+        @apply border-border;
+    }
+
+    html,
+    body {
+        height: 100%;
+    }
+
+    body {
+        @apply bg-background text-foreground antialiased;
+        text-rendering: optimizeLegibility;
+    }
+
+    :focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px hsl(var(--ring) / 0.15);
+        border-radius: calc(var(--radius) - 4px);
+    }
+
+    a {
+        color: inherit;
+    }
 }
