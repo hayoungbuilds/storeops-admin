@@ -5,8 +5,10 @@ import { useOrdersQueryState } from '@/features/orders/useOrdersQueryState';
 import { useOrders } from '@/features/orders/useOrders';
 import { useDebouncedValue } from '@/shared/hooks/useDebouncedValue';
 import { ORDERS_QUERY_DEFAULT as DEFAULT } from '@/shared/constants/orders';
+import { useRouter } from 'next/navigation';
 
 export default function OrdersPage() {
+    const router = useRouter();
     const { state, setQuery } = useOrdersQueryState();
 
     // input은 로컬에서 즉시 움직이게
@@ -140,7 +142,14 @@ export default function OrdersPage() {
 
                     <div className="divide-y">
                         {data.items.map((o: any) => (
-                            <div key={o.id} className="px-4 py-3 text-sm hover:bg-muted/30">
+                            <div
+                                key={o.id}
+                                role="button"
+                                tabIndex={0}
+                                onClick={() => router.push(`/orders/${o.id}`)}
+                                onKeyDown={(e) => e.key === 'Enter' && router.push(`/orders/${o.id}`)}
+                                className="px-4 py-3 text-sm hover:bg-muted/30 cursor-pointer"
+                            >
                                 <div className="flex items-center justify-between">
                                     <div className="font-medium">{o.id}</div>
                                     <div className="text-muted-foreground">{o.time}</div>
