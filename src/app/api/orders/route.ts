@@ -65,8 +65,6 @@ function buildMockOrders(count = 180): Order[] {
     });
 }
 
-const ALL = buildMockOrders(180);
-
 function parseQuery(searchParams: URLSearchParams) {
     const q = (searchParams.get('q') ?? DEFAULT.q).trim().toLowerCase();
 
@@ -83,6 +81,8 @@ function parseQuery(searchParams: URLSearchParams) {
 
     return { q, status, channel, page, pageSize, id };
 }
+
+const ALL = buildMockOrders(180);
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
@@ -116,4 +116,23 @@ export async function GET(req: NextRequest) {
     };
 
     return Response.json(res);
+}
+
+export async function PATCH(req: NextRequest) {
+    const body = await req.json().catch(() => null);
+    const id = body?.id as string | undefined;
+    const status = body?.status as string | undefined;
+
+    if (!id || !status) return Response.json({ error: 'invalid' }, { status: 400 });
+
+    const idx = ALL.findIndex((o) => o.id === id);
+    if (idx < 0) return Response.json({ error: 'not_found' }, { status: 404 });
+
+    // 데모용: 가끔 실패
+    if (Math.random() < 0.1) return Response.json({ error: 'random_fail' }, { status: 500 });
+
+    const next = { ...ALL[idx], status: status as Status };
+    ALL[idx] = next;
+
+    return Response.json({ item: next });
 }

@@ -3,6 +3,8 @@
 import { useParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useOrder } from '@/features/orders/useOrder';
+import { useUpdateOrderStatus } from '@/features/orders/useUpdateOrderStatus';
+import { formatKRW } from '@/lib/format';
 
 function StatusBadge({ status }: { status: string }) {
     const map: Record<string, string> = {
@@ -23,6 +25,7 @@ export default function OrderDetailPage() {
     const router = useRouter();
     const params = useParams<{ id: string }>();
     const id = decodeURIComponent(params.id);
+    const update = useUpdateOrderStatus();
 
     const { data, isLoading, isError, refetch } = useOrder(id);
     const order = data?.item;
@@ -91,7 +94,7 @@ export default function OrderDetailPage() {
 
                 <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
                     <div className="text-muted-foreground">금액</div>
-                    <div className="text-right">₩ {Number(order.amount).toLocaleString('ko-KR')}</div>
+                    <div className="text-right">{formatKRW(order.amount)}</div>
 
                     <div className="text-muted-foreground">채널</div>
                     <div className="text-right">{order.channel}</div>
@@ -109,21 +112,29 @@ export default function OrderDetailPage() {
                 <div className="mt-3 flex flex-wrap gap-2">
                     <button
                         className="h-10 rounded-md border bg-background px-3 text-sm hover:bg-muted/40"
-                        onClick={() => toast.success("상태를 '준비중'으로 변경했어요 (데모)")}
+                        onClick={() =>
+                            update.mutate(
+                                { id: order.id, status: 'preparing' },
+                                {
+                                    onSuccess: () => toast.success('준비중으로 변경'),
+                                    onError: () => toast.error('변경 실패. 다시 시도해주세요.'),
+                                }
+                            )
+                        }
                     >
                         준비중 처리
                     </button>
 
                     <button
                         className="h-10 rounded-md border bg-background px-3 text-sm hover:bg-muted/40"
-                        onClick={() => toast.success("상태를 '출고'로 변경했어요 (데모)")}
+                        onClick={() => toast.success("상태를 '출고'로 변경")}
                     >
                         출고 처리
                     </button>
 
                     <button
                         className="h-10 rounded-md border bg-background px-3 text-sm hover:bg-muted/40"
-                        onClick={() => toast.message('취소/환불 플로우는 Day3에서 확장')}
+                        onClick={() => toast.message('취소/환불 플로우는 구현 중입니다.')}
                     >
                         취소/환불
                     </button>

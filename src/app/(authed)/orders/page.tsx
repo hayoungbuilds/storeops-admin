@@ -6,6 +6,8 @@ import { useOrders } from '@/features/orders/useOrders';
 import { useDebouncedValue } from '@/shared/hooks/useDebouncedValue';
 import { ORDERS_QUERY_DEFAULT as DEFAULT } from '@/shared/constants/orders';
 import { useRouter } from 'next/navigation';
+import { formatKRW } from '@/lib/format';
+import { StatusBadge } from '@/features/orders/components/StatusBadge';
 
 export default function OrdersPage() {
     const router = useRouter();
@@ -115,56 +117,81 @@ export default function OrdersPage() {
                 </div>
             )}
 
-            {data && (
-                <div className="overflow-hidden rounded-lg border bg-background">
-                    <div className="flex items-center justify-between border-b px-4 py-3 text-sm">
-                        <span className="text-muted-foreground">총 {data.meta.total}건</span>
-                        <div className="flex items-center gap-2">
+            {data &&
+                (data.items.length === 0 ? (
+                    <div className="rounded-lg border bg-background p-10 text-center">
+                        <p className="text-sm font-medium">검색 결과가 없어요</p>
+                        <p className="mt-1 text-xs text-muted-foreground">검색어/필터를 바꿔보거나 초기화해보세요.</p>
+
+                        <div className="mt-4 flex justify-center gap-2">
                             <button
-                                className="h-9 rounded-md border bg-muted px-3 text-sm"
-                                disabled={qInput !== state.q || state.page <= 1}
-                                onClick={() => setQuery({ page: state.page - 1 })}
+                                className="h-10 rounded-md border bg-muted px-3 text-sm"
+                                onClick={() => {
+                                    setQInput(DEFAULT.q);
+                                    setQuery({
+                                        q: DEFAULT.q,
+                                        status: DEFAULT.status,
+                                        channel: DEFAULT.channel,
+                                        page: DEFAULT.page,
+                                        pageSize: DEFAULT.pageSize,
+                                    });
+                                }}
                             >
-                                이전
-                            </button>
-                            <span className="text-xs text-muted-foreground">
-                                {data.meta.page} / {data.meta.totalPages}
-                            </span>
-                            <button
-                                className="h-9 rounded-md border bg-muted px-3 text-sm"
-                                disabled={qInput !== state.q || state.page >= data.meta.totalPages}
-                                onClick={() => setQuery({ page: state.page + 1 })}
-                            >
-                                다음
+                                필터 초기화
                             </button>
                         </div>
                     </div>
-
-                    <div className="divide-y">
-                        {data.items.map((o: any) => (
-                            <div
-                                key={o.id}
-                                role="button"
-                                tabIndex={0}
-                                onClick={() => router.push(`/orders/${o.id}`)}
-                                onKeyDown={(e) => e.key === 'Enter' && router.push(`/orders/${o.id}`)}
-                                className="px-4 py-3 text-sm hover:bg-muted/30 cursor-pointer"
-                            >
-                                <div className="flex items-center justify-between">
-                                    <div className="font-medium">{o.id}</div>
-                                    <div className="text-muted-foreground">{o.time}</div>
-                                </div>
-                                <div className="mt-1 flex items-center justify-between text-xs text-muted-foreground">
-                                    <span>
-                                        {o.customer} · {o.channel} · {o.status}
-                                    </span>
-                                    <span>₩ {Number(o.amount).toLocaleString('ko-KR')}</span>
-                                </div>
+                ) : (
+                    <div className="overflow-hidden rounded-lg border bg-background">
+                        <div className="flex items-center justify-between border-b px-4 py-3 text-sm">
+                            <span className="text-muted-foreground">총 {data.meta.total}건</span>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    className="h-9 rounded-md border bg-muted px-3 text-sm"
+                                    disabled={qInput !== state.q || state.page <= 1}
+                                    onClick={() => setQuery({ page: state.page - 1 })}
+                                >
+                                    이전
+                                </button>
+                                <span className="text-xs text-muted-foreground">
+                                    {data.meta.page} / {data.meta.totalPages}
+                                </span>
+                                <button
+                                    className="h-9 rounded-md border bg-muted px-3 text-sm"
+                                    disabled={qInput !== state.q || state.page >= data.meta.totalPages}
+                                    onClick={() => setQuery({ page: state.page + 1 })}
+                                >
+                                    다음
+                                </button>
                             </div>
-                        ))}
+                        </div>
+
+                        <div className="divide-y">
+                            {data.items.map((o: any) => (
+                                <div
+                                    key={o.id}
+                                    role="button"
+                                    tabIndex={0}
+                                    onClick={() => router.push(`/orders/${o.id}`)}
+                                    onKeyDown={(e) => e.key === 'Enter' && router.push(`/orders/${o.id}`)}
+                                    className="cursor-pointer px-4 py-3 text-sm hover:bg-muted/30"
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <div className="font-medium">{o.id}</div>
+                                        <StatusBadge status={o.status} />
+                                    </div>
+
+                                    <div className="mt-1 flex items-center justify-between text-sm text-muted-foreground">
+                                        <div>
+                                            {o.time} · {o.customer} · {o.channel}
+                                        </div>
+                                        <div className="text-foreground">{formatKRW(o.amount)}</div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
-                </div>
-            )}
+                ))}
         </div>
     );
 }
