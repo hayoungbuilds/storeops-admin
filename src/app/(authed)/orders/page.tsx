@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useOrdersQueryState } from '@/features/orders/useOrdersQueryState';
 import { useOrders } from '@/features/orders/useOrders';
 import { useDebouncedValue } from '@/shared/hooks/useDebouncedValue';
@@ -8,6 +8,7 @@ import { ORDERS_QUERY_DEFAULT as DEFAULT, ORDERS_PAGE_SIZE_OPTIONS } from '@/sha
 import { useRouter } from 'next/navigation';
 import { formatKRW } from '@/lib/format';
 import { StatusBadge } from '@/features/orders/components/StatusBadge';
+import { toast } from 'sonner';
 
 export default function OrdersPage() {
     const router = useRouter();
@@ -16,6 +17,13 @@ export default function OrdersPage() {
     // input은 로컬에서 즉시 움직이게
     const [qInput, setQInput] = useState(state.q);
     const qDebounced = useDebouncedValue(qInput, 350);
+
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+    useEffect(() => {
+        // 페이지/필터 바뀌면 선택 초기화
+        setSelectedIds(new Set());
+    }, [state.q, state.status, state.channel, state.page, state.pageSize, state.sort]);
 
     // URL이 외부에서 바뀌는 경우(뒤로가기/링크 진입) input도 동기화
     useEffect(() => {
@@ -30,6 +38,33 @@ export default function OrdersPage() {
     }, [qDebounced]);
 
     const { data, isLoading, isError, refetch } = useOrders(state);
+    const idsOnPage = useMemo(() => (data?.items ?? []).map((o: any) => o.id), [data]);
+
+    const allSelectedOnPage = useMemo(() => {
+        if (!idsOnPage.length) return false;
+        return idsOnPage.every((id) => selectedIds.has(id));
+    }, [idsOnPage, selectedIds]);
+
+    const toggleOne = (id: string) => {
+        setSelectedIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    };
+
+    const toggleAllOnPage = () => {
+        setSelectedIds((prev) => {
+            const next = new Set(prev);
+            if (allSelectedOnPage) {
+                idsOnPage.forEach((id) => next.delete(id));
+            } else {
+                idsOnPage.forEach((id) => next.add(id));
+            }
+            return next;
+        });
+    };
 
     return (
         <div className="space-y-6">
@@ -165,7 +200,16 @@ export default function OrdersPage() {
                 ) : (
                     <div className="overflow-hidden rounded-lg border bg-background">
                         <div className="flex items-center justify-between border-b px-4 py-3 text-sm">
-                            <span className="text-muted-foreground">총 {data.meta.total}건</span>
+                            <label className="flex items-center gap-2 text-muted-foreground">
+                                <input
+                                    type="checkbox"
+                                    checked={allSelectedOnPage}
+                                    onChange={toggleAllOnPage}
+                                    className="h-4 w-4"
+                                />
+                                <span className="text-sm">총 {data.meta.total}건</span>
+                            </label>
+
                             <div className="flex items-center gap-2">
                                 <button
                                     className="h-9 rounded-md border bg-muted px-3 text-sm"
@@ -184,6 +228,22 @@ export default function OrdersPage() {
                                 >
                                     다음
                                 </button>
+                                <div className="flex items-center gap-2">
+                                    {selectedIds.size > 0 && (
+                                        <span className="text-xs text-muted-foreground">선택 {selectedIds.size}건</span>
+                                    )}
+
+                                    <button
+                                        className="h-9 rounded-md border bg-muted px-3 text-sm"
+                                        disabled={selectedIds.size === 0}
+                                        onClick={() => {
+                                            toast.success(`선택 ${selectedIds.size}건 처리 완료(데모)`);
+                                            setSelectedIds(new Set());
+                                        }}
+                                    >
+                                        선택 주문 출고 처리
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -197,8 +257,19 @@ export default function OrdersPage() {
                                     onKeyDown={(e) => e.key === 'Enter' && router.push(`/orders/${o.id}`)}
                                     className="cursor-pointer px-4 py-3 text-sm hover:bg-muted/30"
                                 >
-                                    <div className="flex items-center justify-between">
-                                        <div className="font-medium">{o.id}</div>
+                                    <div className="flex items-center justify-between gap-3">
+                                        <div className="flex items-center gap-3">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedIds.has(o.id)}
+                                                onChange={() => toggleOne(o.id)}
+                                                onClick={(e) => e.stopPropagation()}
+                                                className="h-4 w-4"
+                                                aria-label={`select ${o.id}`}
+                                            />
+                                            <div className="font-medium">{o.id}</div>
+                                        </div>
+
                                         <StatusBadge status={o.status} />
                                     </div>
 
