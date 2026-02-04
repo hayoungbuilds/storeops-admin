@@ -20,6 +20,8 @@ export default function OrdersPage() {
 
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
+    const [isBulkLoading, setIsBulkLoading] = useState(false);
+
     useEffect(() => {
         // 페이지/필터 바뀌면 선택 초기화
         setSelectedIds(new Set());
@@ -68,7 +70,9 @@ export default function OrdersPage() {
 
     const onBulkShip = async () => {
         const ids = Array.from(selectedIds);
-        if (ids.length === 0) return;
+        if (ids.length === 0 || isBulkLoading) return;
+
+        setIsBulkLoading(true);
 
         try {
             const res = await fetch('/api/orders/bulk', {
@@ -89,6 +93,8 @@ export default function OrdersPage() {
             refetch();
         } catch {
             toast.error('네트워크 오류가 발생했어요');
+        } finally {
+            setIsBulkLoading(false);
         }
     };
 
@@ -120,6 +126,7 @@ export default function OrdersPage() {
 
                     <select
                         className="h-10 rounded-md border bg-background px-2 text-sm"
+                        disabled={isBulkLoading}
                         value={state.status}
                         onChange={(e) => setQuery({ status: e.target.value })}
                     >
@@ -133,6 +140,7 @@ export default function OrdersPage() {
 
                     <select
                         className="h-10 rounded-md border bg-background px-2 text-sm"
+                        disabled={isBulkLoading}
                         value={state.channel}
                         onChange={(e) => setQuery({ channel: e.target.value })}
                     >
@@ -142,6 +150,7 @@ export default function OrdersPage() {
                     </select>
                     <select
                         className="h-10 rounded-md border bg-background px-2 text-sm"
+                        disabled={isBulkLoading}
                         value={state.sort}
                         onChange={(e) => setQuery({ sort: e.target.value })}
                     >
@@ -152,6 +161,7 @@ export default function OrdersPage() {
 
                     <select
                         className="h-10 rounded-md border bg-background px-2 text-sm"
+                        disabled={isBulkLoading}
                         value={state.pageSize}
                         onChange={(e) => setQuery({ pageSize: Number(e.target.value) })}
                     >
@@ -239,7 +249,7 @@ export default function OrdersPage() {
                             <div className="flex items-center gap-2">
                                 <button
                                     className="h-9 rounded-md border bg-muted px-3 text-sm"
-                                    disabled={qInput !== state.q || state.page <= 1}
+                                    disabled={isBulkLoading || qInput !== state.q || state.page <= 1}
                                     onClick={() => setQuery({ page: state.page - 1 })}
                                 >
                                     이전
@@ -249,7 +259,7 @@ export default function OrdersPage() {
                                 </span>
                                 <button
                                     className="h-9 rounded-md border bg-muted px-3 text-sm"
-                                    disabled={qInput !== state.q || state.page >= data.meta.totalPages}
+                                    disabled={isBulkLoading || qInput !== state.q || state.page >= data.meta.totalPages}
                                     onClick={() => setQuery({ page: state.page + 1 })}
                                 >
                                     다음
@@ -260,11 +270,11 @@ export default function OrdersPage() {
                                     )}
 
                                     <button
-                                        className="h-9 rounded-md border bg-muted px-3 text-sm"
-                                        disabled={selectedIds.size === 0}
+                                        className="h-9 rounded-md border bg-muted px-3 text-sm disabled:opacity-60"
+                                        disabled={selectedIds.size === 0 || isBulkLoading}
                                         onClick={onBulkShip}
                                     >
-                                        선택 주문 출고 처리
+                                        {isBulkLoading ? '처리 중...' : '선택 주문 출고 처리'}
                                     </button>
                                 </div>
                             </div>
@@ -284,6 +294,7 @@ export default function OrdersPage() {
                                         <div className="flex items-center gap-3">
                                             <input
                                                 type="checkbox"
+                                                disabled={isBulkLoading}
                                                 checked={selectedIds.has(o.id)}
                                                 onChange={() => toggleOne(o.id)}
                                                 onClick={(e) => e.stopPropagation()}
