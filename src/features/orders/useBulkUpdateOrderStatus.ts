@@ -7,6 +7,14 @@ type OrdersListResponse = {
     items: Order[];
     meta: { total: number; page: number; pageSize: number; totalPages: number };
 };
+type BulkResult = {
+    ok: true;
+    status: OrderStatus;
+    requested: number;
+    updated: string[];
+    skipped: string[];
+    notFound: string[];
+};
 
 export function useBulkUpdateOrderStatus() {
     const qc = useQueryClient();
@@ -19,7 +27,7 @@ export function useBulkUpdateOrderStatus() {
                 body: JSON.stringify({ ids, status }),
             });
             if (!res.ok) throw new Error('Failed bulk update');
-            return res.json() as Promise<{ ok: true; updated: number; status: string }>;
+            return res.json() as Promise<BulkResult>;
         },
 
         onMutate: async ({ ids, status }) => {

@@ -90,9 +90,22 @@ export default function OrdersPage() {
             { ids, status: 'shipped' as OrderStatus },
             {
                 onSuccess: (json) => {
-                    toast.success(`${json.updated ?? ids.length}건 출고 처리 완료`);
+                    const ok = json.updated.length;
+                    const skipped = json.skipped.length;
+                    const nf = json.notFound.length;
+
+                    toast.success(`출고 처리 완료: ${ok}건`, {
+                        description: [
+                            skipped ? `스킵 ${skipped}건(이미 출고)` : null,
+                            nf ? `실패 ${nf}건(존재하지 않음)` : null,
+                        ]
+                            .filter(Boolean)
+                            .join(' · '),
+                    });
+
                     setSelectedIds(new Set());
                 },
+
                 onError: () => toast.error('처리에 실패했어요'),
             }
         );
