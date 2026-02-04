@@ -66,6 +66,32 @@ export default function OrdersPage() {
         });
     };
 
+    const onBulkShip = async () => {
+        const ids = Array.from(selectedIds);
+        if (ids.length === 0) return;
+
+        try {
+            const res = await fetch('/api/orders/bulk', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids, status: 'shipped' }),
+            });
+
+            if (!res.ok) {
+                toast.error('처리에 실패했어요');
+                return;
+            }
+
+            const json = await res.json();
+            toast.success(`${json.updated ?? ids.length}건 출고 처리 완료`);
+
+            setSelectedIds(new Set());
+            refetch();
+        } catch {
+            toast.error('네트워크 오류가 발생했어요');
+        }
+    };
+
     return (
         <div className="space-y-6">
             <div className="space-y-1">
@@ -236,10 +262,7 @@ export default function OrdersPage() {
                                     <button
                                         className="h-9 rounded-md border bg-muted px-3 text-sm"
                                         disabled={selectedIds.size === 0}
-                                        onClick={() => {
-                                            toast.success(`선택 ${selectedIds.size}건 처리 완료(데모)`);
-                                            setSelectedIds(new Set());
-                                        }}
+                                        onClick={onBulkShip}
                                     >
                                         선택 주문 출고 처리
                                     </button>

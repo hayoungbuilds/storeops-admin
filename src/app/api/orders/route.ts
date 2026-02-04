@@ -1,74 +1,44 @@
 import { NextRequest } from 'next/server';
-import {
-    ORDER_CHANNELS as CHANNELS,
-    ORDER_STATUSES as STATUSES,
-    ORDER_CUSTOMERS as CUSTOMERS,
-    ORDERS_QUERY_DEFAULT as DEFAULT,
-    OrderStatus,
-    OrderChannel,
-} from '@/shared/constants/orders';
+import { ordersDb, type Order } from '@/lib/mockOrdersDb';
 import { normalizeOrdersPageSize, normalizeOrdersSort } from '@/lib/ordersQuery';
 import { clamp, toInt } from '@/lib/number';
+import {
+    ORDERS_QUERY_DEFAULT as DEFAULT,
+    ORDER_CHANNELS,
+    ORDER_STATUSES,
+    type OrderStatus,
+    type OrderChannel,
+} from '@/shared/constants/orders';
 
-type Status = OrderStatus;
-type Channel = OrderChannel;
-
-type StatusFilter = Status | 'all';
-type ChannelFilter = Channel | 'all';
-
-export type Order = {
-    id: string;
-    time: string;
-    customer: string;
-    channel: Channel;
-    status: Status;
-    amount: number;
-};
+type StatusFilter = OrderStatus | 'all';
+type ChannelFilter = OrderChannel | 'all';
 
 type OrdersResponse = {
     items: Order[];
     meta: { total: number; page: number; pageSize: number; totalPages: number };
 };
 
-function isStatus(value: string): value is Status {
-    return (STATUSES as readonly string[]).includes(value);
-}
-function isChannel(value: string): value is Channel {
-    return (CHANNELS as readonly string[]).includes(value);
-}
+type PatchBody = { id?: string; status?: string };
 
-function pad(n: number, width = 4) {
-    return String(n).padStart(width, '0');
+function isOrderStatus(v: string): v is OrderStatus {
+    return (ORDER_STATUSES as readonly string[]).includes(v);
 }
 
-function buildMockOrders(count = 180): Order[] {
-    return Array.from({ length: count }, (_, i) => {
-        const idx = i + 1;
-        const status = STATUSES[idx % STATUSES.length];
-        const channel = CHANNELS[idx % CHANNELS.length];
-
-        return {
-            id: `ORD-20260202-${pad(idx)}`,
-            time: `2026-02-02 10:${pad(idx % 60, 2)}`,
-            customer: CUSTOMERS[idx % CUSTOMERS.length],
-            channel,
-            status,
-            amount: 10_000 + (idx % 20) * 3_500,
-        };
-    });
+function isOrderChannel(v: string): v is OrderChannel {
+    return (ORDER_CHANNELS as readonly string[]).includes(v);
 }
 
 function parseQuery(searchParams: URLSearchParams) {
     const q = (searchParams.get('q') ?? DEFAULT.q).trim().toLowerCase();
 
     const statusRaw = searchParams.get('status');
-    const status: StatusFilter = statusRaw && isStatus(statusRaw) ? statusRaw : DEFAULT.status;
+    const status: StatusFilter = statusRaw && isOrderStatus(statusRaw) ? statusRaw : DEFAULT.status;
 
     const channelRaw = searchParams.get('channel');
-    const channel: ChannelFilter = channelRaw && isChannel(channelRaw) ? channelRaw : DEFAULT.channel;
+    const channel: ChannelFilter = channelRaw && isOrderChannel(channelRaw) ? channelRaw : DEFAULT.channel;
 
     const page = Math.max(1, toInt(searchParams.get('page'), DEFAULT.page));
-    const pageSize = normalizeOrdersPageSize(toInt(searchParams.get('pageSize'), DEFAULT.pageSize));
+    const pageSize = normalizeOrdersPageSize(toInt(searchParams.get('pageSize'), DEFAULT.pageSize), DEFAULT.pageSize);
 
     const sort = normalizeOrdersSort(searchParams.get('sort'), DEFAULT.sort);
 
@@ -77,19 +47,17 @@ function parseQuery(searchParams: URLSearchParams) {
     return { q, status, channel, page, pageSize, id, sort };
 }
 
-const ALL = buildMockOrders(180);
-
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const { q, status, channel, page, pageSize, id, sort } = parseQuery(searchParams);
 
     // 단건 조회
     if (id) {
-        const found = ALL.find((o) => o.id === id);
+        const found = ordersDb.find((o) => o.id === id);
         return Response.json({ item: found ?? null });
     }
 
-    let filtered = [...ALL];
+    let filtered = [...ordersDb];
 
     if (q) {
         filtered = filtered.filter((o) => o.id.toLowerCase().includes(q) || o.customer.toLowerCase().includes(q));
@@ -98,12 +66,17 @@ export async function GET(req: NextRequest) {
     if (status !== 'all') filtered = filtered.filter((o) => o.status === status);
     if (channel !== 'all') filtered = filtered.filter((o) => o.channel === channel);
 
-    if (sort === 'time_desc') {
-        filtered.sort((a, b) => b.time.localeCompare(a.time));
-    } else if (sort === 'amount_desc') {
-        filtered.sort((a, b) => b.amount - a.amount);
-    } else if (sort === 'amount_asc') {
-        filtered.sort((a, b) => a.amount - b.amount);
+    switch (sort) {
+        case 'amount_desc':
+            filtered.sort((a, b) => b.amount - a.amount);
+            break;
+        case 'amount_asc':
+            filtered.sort((a, b) => a.amount - b.amount);
+            break;
+        case 'time_desc':
+        default:
+            filtered.sort((a, b) => b.time.localeCompare(a.time));
+            break;
     }
 
     const total = filtered.length;
@@ -122,20 +95,18 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-    const body = await req.json().catch(() => null);
-    const id = body?.id as string | undefined;
-    const status = body?.status as string | undefined;
+    const body = (await req.json().catch(() => null)) as PatchBody | null;
 
-    if (!id || !status) return Response.json({ error: 'invalid' }, { status: 400 });
+    const id = body?.id?.trim();
+    const statusRaw = body?.status;
 
-    const idx = ALL.findIndex((o) => o.id === id);
+    if (!id || !statusRaw) return Response.json({ error: 'invalid' }, { status: 400 });
+    if (!isOrderStatus(statusRaw)) return Response.json({ error: 'invalid_status' }, { status: 400 });
+
+    const idx = ordersDb.findIndex((o) => o.id === id);
     if (idx < 0) return Response.json({ error: 'not_found' }, { status: 404 });
 
-    // 데모용: 가끔 실패
-    if (Math.random() < 0.1) return Response.json({ error: 'random_fail' }, { status: 500 });
+    ordersDb[idx] = { ...ordersDb[idx], status: statusRaw };
 
-    const next = { ...ALL[idx], status: status as Status };
-    ALL[idx] = next;
-
-    return Response.json({ item: next });
+    return Response.json({ item: ordersDb[idx] });
 }
