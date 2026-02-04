@@ -42,8 +42,12 @@ export default function OrdersPage() {
 
     // 디바운스 값이 바뀌면 URL에 반영
     useEffect(() => {
-        if (qDebounced !== state.q) setQuery({ q: qDebounced });
-    }, [qDebounced, state.q, setQuery]);
+        if (qDebounced !== qInput) return;
+
+        if (qDebounced !== state.q) {
+            setQuery({ q: qDebounced });
+        }
+    }, [qDebounced, qInput, state.q, setQuery]);
 
     const idsOnPage = useMemo(() => (data?.items ?? []).map((o: Order) => o.id), [data]);
 
