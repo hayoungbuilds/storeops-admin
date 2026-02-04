@@ -2,8 +2,9 @@
 
 import { useCallback, useMemo } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { ORDERS_QUERY_DEFAULT as DEFAULT, ORDERS_QUERY_DEFAULT, normalizeOrdersSort } from '@/shared/constants/orders';
-import { ORDERS_PAGE_SIZE_OPTIONS } from '@/shared/constants/orders';
+import { ORDERS_QUERY_DEFAULT as DEFAULT, ORDERS_QUERY_DEFAULT } from '@/shared/constants/orders';
+import { normalizeOrdersPageSize, normalizeOrdersSort } from '@/lib/ordersQuery';
+import { toInt } from '@/lib/number';
 
 export type OrdersQuery = {
     q: string;
@@ -14,16 +15,6 @@ export type OrdersQuery = {
     sort: string;
 };
 
-// 숫자 파싱 안전장치
-function toInt(value: string | null, fallback: number) {
-    const n = Number(value);
-    return Number.isFinite(n) ? n : fallback;
-}
-
-function normalizePageSize(n: number) {
-    return (ORDERS_PAGE_SIZE_OPTIONS as readonly number[]).includes(n) ? n : DEFAULT.pageSize;
-}
-
 // URLSearchParams -> state
 function parseQuery(sp: URLSearchParams): OrdersQuery {
     return {
@@ -31,7 +22,7 @@ function parseQuery(sp: URLSearchParams): OrdersQuery {
         status: sp.get('status') ?? DEFAULT.status,
         channel: sp.get('channel') ?? DEFAULT.channel,
         page: Math.max(1, toInt(sp.get('page'), DEFAULT.page)),
-        pageSize: normalizePageSize(toInt(sp.get('pageSize'), DEFAULT.pageSize)),
+        pageSize: normalizeOrdersPageSize(toInt(sp.get('pageSize'), DEFAULT.pageSize)),
         sort: normalizeOrdersSort(sp.get('sort'), ORDERS_QUERY_DEFAULT.sort),
     };
 }

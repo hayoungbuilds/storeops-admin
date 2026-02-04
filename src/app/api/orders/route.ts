@@ -6,9 +6,9 @@ import {
     ORDERS_QUERY_DEFAULT as DEFAULT,
     OrderStatus,
     OrderChannel,
-    ORDERS_PAGE_SIZE_OPTIONS,
-    normalizeOrdersSort,
 } from '@/shared/constants/orders';
+import { normalizeOrdersPageSize, normalizeOrdersSort } from '@/lib/ordersQuery';
+import { clamp, toInt } from '@/lib/number';
 
 type Status = OrderStatus;
 type Channel = OrderChannel;
@@ -41,19 +41,6 @@ function pad(n: number, width = 4) {
     return String(n).padStart(width, '0');
 }
 
-function toInt(value: string | null, fallback: number) {
-    const n = Number(value);
-    return Number.isFinite(n) ? n : fallback;
-}
-
-function clamp(n: number, min: number, max: number) {
-    return Math.min(max, Math.max(min, n));
-}
-
-function normalizePageSize(n: number) {
-    return (ORDERS_PAGE_SIZE_OPTIONS as readonly number[]).includes(n) ? n : DEFAULT.pageSize;
-}
-
 function buildMockOrders(count = 180): Order[] {
     return Array.from({ length: count }, (_, i) => {
         const idx = i + 1;
@@ -81,7 +68,7 @@ function parseQuery(searchParams: URLSearchParams) {
     const channel: ChannelFilter = channelRaw && isChannel(channelRaw) ? channelRaw : DEFAULT.channel;
 
     const page = Math.max(1, toInt(searchParams.get('page'), DEFAULT.page));
-    const pageSize = normalizePageSize(toInt(searchParams.get('pageSize'), DEFAULT.pageSize));
+    const pageSize = normalizeOrdersPageSize(toInt(searchParams.get('pageSize'), DEFAULT.pageSize));
 
     const sort = normalizeOrdersSort(searchParams.get('sort'), DEFAULT.sort);
 
