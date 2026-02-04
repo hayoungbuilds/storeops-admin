@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useOrdersQueryState } from '@/features/orders/useOrdersQueryState';
 import { useOrders } from '@/features/orders/useOrders';
 import { useDebouncedValue } from '@/shared/hooks/useDebouncedValue';
-import { ORDERS_QUERY_DEFAULT as DEFAULT } from '@/shared/constants/orders';
+import { ORDERS_QUERY_DEFAULT as DEFAULT, ORDERS_PAGE_SIZE_OPTIONS } from '@/shared/constants/orders';
 import { useRouter } from 'next/navigation';
 import { formatKRW } from '@/lib/format';
 import { StatusBadge } from '@/features/orders/components/StatusBadge';
@@ -78,6 +78,17 @@ export default function OrdersPage() {
                         <option value="all">채널 전체</option>
                         <option value="Online">Online</option>
                         <option value="POS">POS</option>
+                    </select>
+                    <select
+                        className="h-10 rounded-md border bg-background px-2 text-sm"
+                        value={state.pageSize}
+                        onChange={(e) => setQuery({ pageSize: Number(e.target.value) })}
+                    >
+                        {ORDERS_PAGE_SIZE_OPTIONS.map((n) => (
+                            <option key={n} value={n}>
+                                {n}개
+                            </option>
+                        ))}
                     </select>
                 </div>
 

@@ -3,6 +3,7 @@
 import { useCallback, useMemo } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { ORDERS_QUERY_DEFAULT as DEFAULT } from '@/shared/constants/orders';
+import { ORDERS_PAGE_SIZE_OPTIONS } from '@/shared/constants/orders';
 
 export type OrdersQuery = {
     q: string;
@@ -18,8 +19,8 @@ function toInt(value: string | null, fallback: number) {
     return Number.isFinite(n) ? n : fallback;
 }
 
-function clamp(n: number, min: number, max: number) {
-    return Math.min(max, Math.max(min, n));
+function normalizePageSize(n: number) {
+    return (ORDERS_PAGE_SIZE_OPTIONS as readonly number[]).includes(n) ? n : DEFAULT.pageSize;
 }
 
 // URLSearchParams -> state
@@ -29,7 +30,7 @@ function parseQuery(sp: URLSearchParams): OrdersQuery {
         status: sp.get('status') ?? DEFAULT.status,
         channel: sp.get('channel') ?? DEFAULT.channel,
         page: Math.max(1, toInt(sp.get('page'), DEFAULT.page)),
-        pageSize: clamp(toInt(sp.get('pageSize'), DEFAULT.pageSize), DEFAULT.pageSize, 50),
+        pageSize: normalizePageSize(toInt(sp.get('pageSize'), DEFAULT.pageSize)),
     };
 }
 

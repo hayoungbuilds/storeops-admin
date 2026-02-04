@@ -6,6 +6,7 @@ import {
     ORDERS_QUERY_DEFAULT as DEFAULT,
     OrderStatus,
     OrderChannel,
+    ORDERS_PAGE_SIZE_OPTIONS,
 } from '@/shared/constants/orders';
 
 type Status = OrderStatus;
@@ -48,6 +49,10 @@ function clamp(n: number, min: number, max: number) {
     return Math.min(max, Math.max(min, n));
 }
 
+function normalizePageSize(n: number) {
+    return (ORDERS_PAGE_SIZE_OPTIONS as readonly number[]).includes(n) ? n : DEFAULT.pageSize;
+}
+
 function buildMockOrders(count = 180): Order[] {
     return Array.from({ length: count }, (_, i) => {
         const idx = i + 1;
@@ -75,7 +80,7 @@ function parseQuery(searchParams: URLSearchParams) {
     const channel: ChannelFilter = channelRaw && isChannel(channelRaw) ? channelRaw : DEFAULT.channel;
 
     const page = Math.max(1, toInt(searchParams.get('page'), DEFAULT.page));
-    const pageSize = clamp(toInt(searchParams.get('pageSize'), DEFAULT.pageSize), DEFAULT.pageSize, 50);
+    const pageSize = normalizePageSize(toInt(searchParams.get('pageSize'), DEFAULT.pageSize));
 
     const id = (searchParams.get('id') ?? '').trim();
 

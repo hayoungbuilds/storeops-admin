@@ -12,3 +12,6 @@ export const ORDER_CUSTOMERS = ['Kim', 'Lee', 'Park', 'Choi', 'Jung', 'Han', 'Yo
 
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 export type OrderChannel = (typeof ORDER_CHANNELS)[number];
+
+export const ORDERS_PAGE_SIZE_OPTIONS = [10, 20, 50] as const;
+export type OrdersPageSize = (typeof ORDERS_PAGE_SIZE_OPTIONS)[number];
