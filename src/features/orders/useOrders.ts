@@ -11,6 +11,7 @@ export function useOrders(qs: OrdersQuery) {
                 channel: qs.channel,
                 page: String(qs.page),
                 pageSize: String(qs.pageSize),
+                sort: qs.sort,
             });
 
             const res = await fetch(`/api/orders?${params.toString()}`);

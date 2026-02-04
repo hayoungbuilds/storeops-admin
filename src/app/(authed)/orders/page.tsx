@@ -81,6 +81,16 @@ export default function OrdersPage() {
                     </select>
                     <select
                         className="h-10 rounded-md border bg-background px-2 text-sm"
+                        value={state.sort}
+                        onChange={(e) => setQuery({ sort: e.target.value })}
+                    >
+                        <option value="time_desc">최신순</option>
+                        <option value="amount_desc">금액 높은순</option>
+                        <option value="amount_asc">금액 낮은순</option>
+                    </select>
+
+                    <select
+                        className="h-10 rounded-md border bg-background px-2 text-sm"
                         value={state.pageSize}
                         onChange={(e) => setQuery({ pageSize: Number(e.target.value) })}
                     >

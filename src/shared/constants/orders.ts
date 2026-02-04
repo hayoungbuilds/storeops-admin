@@ -4,6 +4,7 @@ export const ORDERS_QUERY_DEFAULT = {
     channel: 'all',
     page: 1,
     pageSize: 10,
+    sort: 'time_desc',
 } as const;
 
 export const ORDER_STATUSES = ['paid', 'preparing', 'shipped', 'cancelled', 'refunded'] as const;
@@ -15,3 +16,10 @@ export type OrderChannel = (typeof ORDER_CHANNELS)[number];
 
 export const ORDERS_PAGE_SIZE_OPTIONS = [10, 20, 50] as const;
 export type OrdersPageSize = (typeof ORDERS_PAGE_SIZE_OPTIONS)[number];
+
+export const ORDERS_SORT_OPTIONS = ['time_desc', 'amount_desc', 'amount_asc'] as const;
+export type OrdersSort = (typeof ORDERS_SORT_OPTIONS)[number];
+
+export function normalizeOrdersSort(value: string | null, fallback: OrdersSort) {
+    return value && (ORDERS_SORT_OPTIONS as readonly string[]).includes(value) ? (value as OrdersSort) : fallback;
+}

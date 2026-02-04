@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { ORDERS_QUERY_DEFAULT as DEFAULT } from '@/shared/constants/orders';
+import { ORDERS_QUERY_DEFAULT as DEFAULT, ORDERS_QUERY_DEFAULT, normalizeOrdersSort } from '@/shared/constants/orders';
 import { ORDERS_PAGE_SIZE_OPTIONS } from '@/shared/constants/orders';
 
 export type OrdersQuery = {
@@ -11,6 +11,7 @@ export type OrdersQuery = {
     channel: string;
     page: number;
     pageSize: number;
+    sort: string;
 };
 
 // 숫자 파싱 안전장치
@@ -31,6 +32,7 @@ function parseQuery(sp: URLSearchParams): OrdersQuery {
         channel: sp.get('channel') ?? DEFAULT.channel,
         page: Math.max(1, toInt(sp.get('page'), DEFAULT.page)),
         pageSize: normalizePageSize(toInt(sp.get('pageSize'), DEFAULT.pageSize)),
+        sort: normalizeOrdersSort(sp.get('sort'), ORDERS_QUERY_DEFAULT.sort),
     };
 }
 
@@ -51,6 +53,7 @@ function serializeQuery(next: URLSearchParams, q: OrdersQuery) {
     setOrDelete('channel', q.channel, DEFAULT.channel);
     setNumOrDelete('page', Math.max(1, q.page), DEFAULT.page);
     setNumOrDelete('pageSize', q.pageSize, DEFAULT.pageSize);
+    setOrDelete('sort', q.sort, ORDERS_QUERY_DEFAULT.sort);
 }
 
 export function useOrdersQueryState() {
@@ -70,7 +73,7 @@ export function useOrdersQueryState() {
 
             const merged: OrdersQuery = { ...currentState, ...patch };
 
-            if ('q' in patch || 'status' in patch || 'channel' in patch || 'pageSize' in patch) {
+            if ('q' in patch || 'status' in patch || 'channel' in patch || 'pageSize' in patch || 'sort' in patch) {
                 merged.page = 1;
             }
 

@@ -7,6 +7,7 @@ import {
     OrderStatus,
     OrderChannel,
     ORDERS_PAGE_SIZE_OPTIONS,
+    normalizeOrdersSort,
 } from '@/shared/constants/orders';
 
 type Status = OrderStatus;
@@ -82,16 +83,18 @@ function parseQuery(searchParams: URLSearchParams) {
     const page = Math.max(1, toInt(searchParams.get('page'), DEFAULT.page));
     const pageSize = normalizePageSize(toInt(searchParams.get('pageSize'), DEFAULT.pageSize));
 
+    const sort = normalizeOrdersSort(searchParams.get('sort'), DEFAULT.sort);
+
     const id = (searchParams.get('id') ?? '').trim();
 
-    return { q, status, channel, page, pageSize, id };
+    return { q, status, channel, page, pageSize, id, sort };
 }
 
 const ALL = buildMockOrders(180);
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
-    const { q, status, channel, page, pageSize, id } = parseQuery(searchParams);
+    const { q, status, channel, page, pageSize, id, sort } = parseQuery(searchParams);
 
     // 단건 조회
     if (id) {
@@ -99,7 +102,7 @@ export async function GET(req: NextRequest) {
         return Response.json({ item: found ?? null });
     }
 
-    let filtered = ALL;
+    let filtered = [...ALL];
 
     if (q) {
         filtered = filtered.filter((o) => o.id.toLowerCase().includes(q) || o.customer.toLowerCase().includes(q));
@@ -107,6 +110,14 @@ export async function GET(req: NextRequest) {
 
     if (status !== 'all') filtered = filtered.filter((o) => o.status === status);
     if (channel !== 'all') filtered = filtered.filter((o) => o.channel === channel);
+
+    if (sort === 'time_desc') {
+        filtered.sort((a, b) => b.time.localeCompare(a.time));
+    } else if (sort === 'amount_desc') {
+        filtered.sort((a, b) => b.amount - a.amount);
+    } else if (sort === 'amount_asc') {
+        filtered.sort((a, b) => a.amount - b.amount);
+    }
 
     const total = filtered.length;
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
