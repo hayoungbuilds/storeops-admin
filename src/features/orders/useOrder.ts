@@ -1,13 +1,18 @@
 import { useQuery } from '@tanstack/react-query';
+import type { Order } from '@/lib/mockOrdersDb';
 
 export function useOrder(id: string) {
     return useQuery({
         queryKey: ['order', id],
+        enabled: !!id,
         queryFn: async () => {
-            const res = await fetch(`/api/orders?id=${encodeURIComponent(id)}`);
+            const params = new URLSearchParams({ id });
+            const res = await fetch(`/api/orders?${params.toString()}`);
+
             if (!res.ok) throw new Error('Failed to fetch order');
-            return res.json() as Promise<{ item: any | null }>;
+
+            const json = (await res.json()) as { item: Order | null };
+            return json.item;
         },
-        enabled: Boolean(id),
     });
 }
