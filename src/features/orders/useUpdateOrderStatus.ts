@@ -65,10 +65,10 @@ export function useUpdateOrderStatus() {
             }
         },
 
-        onSettled: async (_data, _err, variables) => {
-            // 서버 기준으로 동기화
-            await qc.invalidateQueries({ queryKey: ['order', variables.id] });
-            await qc.invalidateQueries({ queryKey: ['orders'] });
+        onSettled: (_data, _err, variables) => {
+            qc.invalidateQueries({ queryKey: ['order', variables.id] });
+            qc.invalidateQueries({ queryKey: ['orders'] });
+            qc.invalidateQueries({ queryKey: ['dashboard'] });
         },
     });
 }

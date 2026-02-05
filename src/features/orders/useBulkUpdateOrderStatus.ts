@@ -64,6 +64,7 @@ export function useBulkUpdateOrderStatus() {
         onSettled: async (_data, _err) => {
             await qc.invalidateQueries({ queryKey: ['orders'] });
             await qc.invalidateQueries({ queryKey: ['order'] });
+            await qc.invalidateQueries({ queryKey: ['dashboard'] });
         },
     });
 }
