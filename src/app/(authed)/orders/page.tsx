@@ -11,6 +11,7 @@ import { formatKRW } from '@/lib/format';
 import { StatusBadge } from '@/features/orders/components/StatusBadge';
 import type { Order } from '@/lib/mockOrdersDb';
 import { useBulkUpdateOrderStatus } from '@/features/orders/useBulkUpdateOrderStatus';
+import { useRole } from '@/shared/providers/RoleProvider';
 
 export default function OrdersPage() {
     const router = useRouter();
@@ -29,6 +30,10 @@ export default function OrdersPage() {
     // bulk mutation
     const bulk = useBulkUpdateOrderStatus();
     const isBulkLoading = bulk.isPending;
+
+    // 권한
+    const { role } = useRole();
+    const canWrite = role === 'admin';
 
     // 페이지/필터/정렬/사이즈 바뀌면 선택 초기화
     useEffect(() => {
@@ -275,13 +280,18 @@ export default function OrdersPage() {
                                     </span>
                                 )}
 
-                                <button
-                                    className="h-9 rounded-md border bg-muted px-3 text-sm disabled:opacity-60"
-                                    disabled={selectedIds.size === 0 || isBulkLoading}
-                                    onClick={onBulkShip}
-                                >
-                                    {isBulkLoading ? '처리 중...' : '선택 주문 출고 처리'}
-                                </button>
+                                {canWrite ? (
+                                    <button
+                                        className="h-9 rounded-md border bg-muted px-3 text-sm disabled:opacity-60"
+                                        disabled={!canWrite || selectedIds.size === 0 || isBulkLoading}
+                                        onClick={() => {
+                                            if (!canWrite) return toast.error('Viewer 권한에서는 실행할 수 없어요');
+                                            onBulkShip();
+                                        }}
+                                    >
+                                        선택 주문 출고 처리
+                                    </button>
+                                ) : null}
                             </div>
                         </div>
 

@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Order } from '@/lib/mockOrdersDb';
 import { OrderStatus } from '@/shared/constants/orders';
+import { apiFetch } from '@/lib/fetcher';
 
 type Payload = { id: string; status: OrderStatus };
 type OrdersListResponse = {
@@ -13,7 +14,7 @@ export function useUpdateOrderStatus() {
 
     return useMutation({
         mutationFn: async (payload: Payload) => {
-            const res = await fetch('/api/orders', {
+            const res = await apiFetch('/api/orders', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),

@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Order } from '@/lib/mockOrdersDb';
 import { OrderStatus } from '@/shared/constants/orders';
+import { apiFetch } from '@/lib/fetcher';
 
 type Payload = { ids: string[]; status: OrderStatus };
 type OrdersListResponse = {
@@ -21,7 +22,7 @@ export function useBulkUpdateOrderStatus() {
 
     return useMutation({
         mutationFn: async ({ ids, status }: Payload) => {
-            const res = await fetch('/api/orders/bulk', {
+            const res = await apiFetch('/api/orders/bulk', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ids, status }),

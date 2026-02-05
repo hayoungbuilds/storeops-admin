@@ -7,6 +7,7 @@ import { StatusBadge } from '@/features/orders/components/StatusBadge';
 import { useOrder } from '@/features/orders/useOrder';
 import { useUpdateOrderStatus } from '@/features/orders/useUpdateOrderStatus';
 import { OrderStatus } from '@/shared/constants/orders';
+import { useRole } from '@/shared/providers/RoleProvider';
 
 export default function OrderDetailPage() {
     const router = useRouter();
@@ -15,6 +16,9 @@ export default function OrderDetailPage() {
 
     const { data: order, isLoading, isError, refetch } = useOrder(id);
     const update = useUpdateOrderStatus();
+
+    const { role } = useRole();
+    const canWrite = role === 'admin';
 
     const onChangeStatus = (status: OrderStatus) => {
         update.mutate(
@@ -101,42 +105,44 @@ export default function OrderDetailPage() {
             </div>
 
             {/* Actions */}
-            <div className="rounded-lg border bg-background p-4">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <div className="text-sm font-medium">액션</div>
-                        <p className="mt-1 text-xs text-muted-foreground">상태 변경은 API(PATCH)로 처리합니다.</p>
+            {canWrite && (
+                <div className="rounded-lg border bg-background p-4">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <div className="text-sm font-medium">액션</div>
+                            <p className="mt-1 text-xs text-muted-foreground">상태 변경은 API(PATCH)로 처리합니다.</p>
+                        </div>
+
+                        {update.isPending && <span className="text-xs text-muted-foreground">처리 중...</span>}
                     </div>
 
-                    {update.isPending && <span className="text-xs text-muted-foreground">처리 중...</span>}
+                    <div className="mt-3 flex flex-wrap gap-2">
+                        <button
+                            className="h-10 rounded-md border bg-background px-3 text-sm hover:bg-muted/40 disabled:opacity-60"
+                            disabled={update.isPending}
+                            onClick={() => onChangeStatus('preparing')}
+                        >
+                            준비중 처리
+                        </button>
+
+                        <button
+                            className="h-10 rounded-md border bg-background px-3 text-sm hover:bg-muted/40 disabled:opacity-60"
+                            disabled={update.isPending}
+                            onClick={() => onChangeStatus('shipped')}
+                        >
+                            출고 처리
+                        </button>
+
+                        <button
+                            className="h-10 rounded-md border bg-background px-3 text-sm hover:bg-muted/40 disabled:opacity-60"
+                            disabled={update.isPending}
+                            onClick={() => toast.message('취소/환불 플로우는 구현 중입니다.')}
+                        >
+                            취소/환불
+                        </button>
+                    </div>
                 </div>
-
-                <div className="mt-3 flex flex-wrap gap-2">
-                    <button
-                        className="h-10 rounded-md border bg-background px-3 text-sm hover:bg-muted/40 disabled:opacity-60"
-                        disabled={update.isPending}
-                        onClick={() => onChangeStatus('preparing')}
-                    >
-                        준비중 처리
-                    </button>
-
-                    <button
-                        className="h-10 rounded-md border bg-background px-3 text-sm hover:bg-muted/40 disabled:opacity-60"
-                        disabled={update.isPending}
-                        onClick={() => onChangeStatus('shipped')}
-                    >
-                        출고 처리
-                    </button>
-
-                    <button
-                        className="h-10 rounded-md border bg-background px-3 text-sm hover:bg-muted/40 disabled:opacity-60"
-                        disabled={update.isPending}
-                        onClick={() => toast.message('취소/환불 플로우는 구현 중입니다.')}
-                    >
-                        취소/환불
-                    </button>
-                </div>
-            </div>
+            )}
         </div>
     );
 }

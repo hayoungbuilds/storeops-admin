@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { ordersDb } from '@/lib/mockOrdersDb';
 import { ORDER_STATUSES, type OrderStatus } from '@/shared/constants/orders';
+import { requireAdmin } from '@/lib/server/auth';
 
 type BulkBody = { ids?: string[]; status?: string };
 
@@ -9,6 +10,9 @@ function isOrderStatus(v: string): v is OrderStatus {
 }
 
 export async function POST(req: NextRequest) {
+    const forbidden = requireAdmin(req);
+    if (forbidden) return forbidden;
+
     const body = (await req.json().catch(() => null)) as BulkBody | null;
 
     const ids = Array.isArray(body?.ids) ? body!.ids.filter(Boolean) : [];

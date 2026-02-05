@@ -9,6 +9,7 @@ import {
     type OrderStatus,
     type OrderChannel,
 } from '@/shared/constants/orders';
+import { requireAdmin } from '@/lib/server/auth';
 
 type StatusFilter = OrderStatus | 'all';
 type ChannelFilter = OrderChannel | 'all';
@@ -95,6 +96,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
+    const forbidden = requireAdmin(req);
+    if (forbidden) return forbidden;
+
     const body = (await req.json().catch(() => null)) as PatchBody | null;
 
     const id = body?.id?.trim();
