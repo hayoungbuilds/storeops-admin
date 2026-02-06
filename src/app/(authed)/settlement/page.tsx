@@ -70,7 +70,7 @@ export default function SettlementPage() {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="h-full min-h-0 flex flex-col gap-6">
             <div className="flex items-start justify-between gap-3">
                 <div className="space-y-1">
                     <h1 className="text-xl font-semibold">Settlement</h1>
@@ -109,7 +109,7 @@ export default function SettlementPage() {
                 <KpiCard label="정산 예정" value={formatKRW(data.summary.payout)} />
             </div>
 
-            <div className="overflow-hidden rounded-lg border bg-background">
+            <div className="overflow-auto rounded-lg border bg-background">
                 <div className="grid grid-cols-12 border-b px-4 py-3 text-xs text-muted-foreground">
                     <div className="col-span-3">날짜</div>
                     <div className="col-span-2">채널</div>
@@ -119,7 +119,7 @@ export default function SettlementPage() {
                     <div className="col-span-2 text-right">정산액</div>
                 </div>
 
-                <div className="divide-y">
+                <div className="min-h-0 flex-1 overflow-y-auto divide-y">
                     {rows.map((r, i) => (
                         <div
                             key={`${r.date}-${r.channel}-${i}`}
