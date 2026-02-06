@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import type { Order } from '@/lib/mockOrdersDb';
 import type { OrdersQuery } from '@/features/orders/useOrdersQueryState';
+import { Order } from '@/lib/mockDb/ordersDb';
 
 export function useOrders(qs: OrdersQuery) {
     return useQuery({

@@ -1,5 +1,5 @@
+import { Order } from '@/lib/mockDb/ordersDb';
 import { useQuery } from '@tanstack/react-query';
-import type { Order } from '@/lib/mockOrdersDb';
 
 export function useOrder(id: string) {
     return useQuery({

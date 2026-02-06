@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
-import { ordersDb } from '@/lib/mockOrdersDb';
 import type { OrderStatus } from '@/shared/constants/orders';
+import { ordersDb } from '@/lib/mockDb/ordersDb';
 
 type Status = OrderStatus;
 

@@ -1,5 +1,4 @@
 import { NextRequest } from 'next/server';
-import { ordersDb, type Order } from '@/lib/mockOrdersDb';
 import { normalizeOrdersPageSize, normalizeOrdersSort } from '@/lib/ordersQuery';
 import { clamp, toInt } from '@/lib/number';
 import {
@@ -10,6 +9,7 @@ import {
     type OrderChannel,
 } from '@/shared/constants/orders';
 import { requireAdmin } from '@/lib/server/auth';
+import { Order, ordersDb } from '@/lib/mockDb/ordersDb';
 
 type StatusFilter = OrderStatus | 'all';
 type ChannelFilter = OrderChannel | 'all';

@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
-import { ordersDb } from '@/lib/mockOrdersDb';
 import { ORDER_STATUSES, type OrderStatus } from '@/shared/constants/orders';
 import { requireAdmin } from '@/lib/server/auth';
+import { ordersDb } from '@/lib/mockDb/ordersDb';
 
 type BulkBody = { ids?: string[]; status?: string };
 

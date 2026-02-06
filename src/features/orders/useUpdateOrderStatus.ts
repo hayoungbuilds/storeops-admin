@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { Order } from '@/lib/mockOrdersDb';
 import { OrderStatus } from '@/shared/constants/orders';
 import { apiFetch } from '@/lib/fetcher';
+import { Order } from '@/lib/mockDb/ordersDb';
 
 type Payload = { id: string; status: OrderStatus };
 type OrdersListResponse = {

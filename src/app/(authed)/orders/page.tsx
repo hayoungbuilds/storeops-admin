@@ -9,9 +9,9 @@ import { useDebouncedValue } from '@/shared/hooks/useDebouncedValue';
 import { ORDERS_QUERY_DEFAULT as DEFAULT, ORDERS_PAGE_SIZE_OPTIONS, type OrderStatus } from '@/shared/constants/orders';
 import { formatKRW } from '@/lib/format';
 import { StatusBadge } from '@/features/orders/components/StatusBadge';
-import type { Order } from '@/lib/mockOrdersDb';
 import { useBulkUpdateOrderStatus } from '@/features/orders/useBulkUpdateOrderStatus';
 import { useRole } from '@/shared/providers/RoleProvider';
+import { Order } from '@/lib/mockDb/ordersDb';
 
 export default function OrdersPage() {
     const router = useRouter();
