@@ -1,5 +1,6 @@
 'use client';
 
+import { useSettings } from '@/features/settings/useSettings';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -13,12 +14,14 @@ const NAV = [
 
 export default function Sidebar() {
     const pathname = usePathname();
+    const { data } = useSettings();
+    const storeName = data?.storeName ?? 'StoreOps';
 
     return (
         <div className="space-y-8">
             {/* Brand */}
             <div className="space-y-1">
-                <div className="text-base font-semibold leading-none">StoreOps</div>
+                <div className="text-base leading-none font-semibold">{storeName}</div>
                 <div className="text-sm text-muted-foreground">Admin Console</div>
             </div>
 
