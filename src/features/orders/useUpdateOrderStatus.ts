@@ -1,13 +1,10 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { OrderStatus } from '@/shared/constants/orders';
+import type { Order, OrderStatus, OrdersListResponse } from '@/shared/constants/orders';
+import { ordersKeys } from './queries';
 import { apiFetch } from '@/lib/fetcher';
-import { Order } from '@/lib/mockDb/ordersDb';
 
 type Payload = { id: string; status: OrderStatus };
-type OrdersListResponse = {
-    items: Order[];
-    meta: { total: number; page: number; pageSize: number; totalPages: number };
-};
+type ResponseBody = { item: Order };
 
 export function useUpdateOrderStatus() {
     const qc = useQueryClient();
@@ -20,55 +17,39 @@ export function useUpdateOrderStatus() {
                 body: JSON.stringify(payload),
             });
             if (!res.ok) throw new Error('Failed to update');
-
-            // API는 { item: Order } 형태를 반환
-            return res.json() as Promise<{ item: Order }>;
+            return res.json() as Promise<ResponseBody>;
         },
 
-        // optimistic
         onMutate: async ({ id, status }) => {
-            // 상세 쿼리 중단
-            await qc.cancelQueries({ queryKey: ['order', id] });
+            await qc.cancelQueries({ queryKey: ordersKeys.detail(id) });
+            await qc.cancelQueries({ queryKey: ordersKeys.lists() });
 
-            // 상세 캐시: Order | null
-            const prevOrder = qc.getQueryData<Order | null>(['order', id]);
+            const prevDetail = qc.getQueryData<{ item: Order | null }>(ordersKeys.detail(id));
 
-            // 리스트 캐시: 여러 key가 있을 수 있으니 prefix로 다 저장해두고 롤백 가능하게
-            const prevLists = qc.getQueriesData<OrdersListResponse>({ queryKey: ['orders'] });
-
-            // 상세 optimistic
-            qc.setQueryData<Order | null>(['order', id], (old) => {
-                if (!old) return old;
-                return { ...old, status } as Order;
+            qc.setQueryData<{ item: Order | null }>(ordersKeys.detail(id), (old) => {
+                if (!old?.item) return old ?? { item: null };
+                return { ...old, item: { ...old.item, status } };
             });
 
-            // 리스트 optimistic (현재 캐시에 있는 모든 페이지/필터 조합에 반영)
-            qc.setQueriesData<OrdersListResponse>({ queryKey: ['orders'] }, (old) => {
-                if (!old?.items) return old;
+            // list는 "list prefix"에 걸린 모든 캐시를 업데이트
+            qc.setQueriesData<OrdersListResponse>({ queryKey: ordersKeys.lists() }, (old) => {
+                if (!old) return old;
                 return {
                     ...old,
                     items: old.items.map((o) => (o.id === id ? { ...o, status } : o)),
                 };
             });
 
-            return { prevOrder, prevLists };
+            return { prevDetail };
         },
 
-        onError: (_err, variables, ctx) => {
-            // 상세 롤백
-            if (ctx) {
-                qc.setQueryData(['order', variables.id], ctx.prevOrder ?? null);
-
-                // 리스트 롤백
-                for (const [key, data] of ctx.prevLists ?? []) {
-                    qc.setQueryData(key, data);
-                }
-            }
+        onError: (_err, vars, ctx) => {
+            if (ctx?.prevDetail) qc.setQueryData(ordersKeys.detail(vars.id), ctx.prevDetail);
         },
 
-        onSettled: (_data, _err, variables) => {
-            qc.invalidateQueries({ queryKey: ['order', variables.id] });
-            qc.invalidateQueries({ queryKey: ['orders'] });
+        onSettled: (_data, _err, vars) => {
+            qc.invalidateQueries({ queryKey: ordersKeys.detail(vars.id) });
+            qc.invalidateQueries({ queryKey: ordersKeys.lists() });
             qc.invalidateQueries({ queryKey: ['dashboard'] });
         },
     });

@@ -4,16 +4,8 @@ import {
     ORDER_CUSTOMERS,
     type OrderChannel,
     type OrderStatus,
+    Order,
 } from '@/shared/constants/orders';
-
-export type Order = {
-    id: string;
-    time: string;
-    customer: string;
-    channel: OrderChannel;
-    status: OrderStatus;
-    amount: number;
-};
 
 function pad(n: number, width = 4) {
     return String(n).padStart(width, '0');

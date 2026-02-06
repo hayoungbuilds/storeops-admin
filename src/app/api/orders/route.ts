@@ -7,9 +7,10 @@ import {
     ORDER_STATUSES,
     type OrderStatus,
     type OrderChannel,
+    Order,
 } from '@/shared/constants/orders';
 import { requireAdmin } from '@/lib/server/auth';
-import { Order, ordersDb } from '@/lib/mockDb/ordersDb';
+import { ordersDb } from '@/lib/mockDb/ordersDb';
 
 type StatusFilter = OrderStatus | 'all';
 type ChannelFilter = OrderChannel | 'all';

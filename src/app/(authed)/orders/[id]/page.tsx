@@ -1,34 +1,72 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { formatKRW } from '@/lib/format';
 import { StatusBadge } from '@/features/orders/components/StatusBadge';
 import { useOrder } from '@/features/orders/useOrder';
 import { useUpdateOrderStatus } from '@/features/orders/useUpdateOrderStatus';
-import { OrderStatus } from '@/shared/constants/orders';
+import type { OrderStatus } from '@/shared/constants/orders';
 import { useRole } from '@/shared/providers/RoleProvider';
+
+const STATUS_LABEL: Record<OrderStatus, string> = {
+    paid: '결제완료',
+    preparing: '준비중',
+    shipped: '출고',
+    cancelled: '취소',
+    refunded: '환불',
+};
 
 export default function OrderDetailPage() {
     const router = useRouter();
     const params = useParams<{ id: string }>();
     const id = decodeURIComponent(params.id);
 
-    const { data: order, isLoading, isError, refetch } = useOrder(id);
-    const update = useUpdateOrderStatus();
+    const { data, isLoading, isError, refetch } = useOrder(id);
+    const order = data?.item ?? null;
 
+    const update = useUpdateOrderStatus();
     const { role } = useRole();
     const canWrite = role === 'admin';
 
-    const onChangeStatus = (status: OrderStatus) => {
+    const isBusy = update.isPending;
+
+    const onChangeStatus = (nextStatus: OrderStatus) => {
+        if (!order) return;
+        if (order.status === nextStatus) return; 
+        if (!canWrite || isBusy) return;
+
         update.mutate(
-            { id, status },
+            { id, status: nextStatus },
             {
-                onSuccess: () => toast.success(`상태를 '${status}'로 변경했어요`),
+                onSuccess: () => toast.success(`'${STATUS_LABEL[nextStatus]}'로 변경했어요`),
                 onError: () => toast.error('변경 실패. 다시 시도해주세요.'),
             }
         );
     };
+
+    const disablePreparing = useMemo(() => {
+        if (!order) return true;
+        return (
+            isBusy ||
+            !canWrite ||
+            order.status === 'preparing' ||
+            order.status === 'cancelled' ||
+            order.status === 'refunded'
+        );
+    }, [order, isBusy, canWrite]);
+
+    const disableShipped = useMemo(() => {
+        if (!order) return true;
+        return (
+            isBusy ||
+            !canWrite ||
+            order.status === 'shipped' ||
+            order.status === 'cancelled' ||
+            order.status === 'refunded'
+        );
+    }, [order, isBusy, canWrite]);
 
     if (isLoading) {
         return (
@@ -113,13 +151,13 @@ export default function OrderDetailPage() {
                             <p className="mt-1 text-xs text-muted-foreground">상태 변경은 API(PATCH)로 처리합니다.</p>
                         </div>
 
-                        {update.isPending && <span className="text-xs text-muted-foreground">처리 중...</span>}
+                        {isBusy && <span className="text-xs text-muted-foreground">처리 중...</span>}
                     </div>
 
                     <div className="mt-3 flex flex-wrap gap-2">
                         <button
                             className="h-10 rounded-md border bg-background px-3 text-sm hover:bg-muted/40 disabled:opacity-60"
-                            disabled={update.isPending}
+                            disabled={disablePreparing}
                             onClick={() => onChangeStatus('preparing')}
                         >
                             준비중 처리
@@ -127,7 +165,7 @@ export default function OrderDetailPage() {
 
                         <button
                             className="h-10 rounded-md border bg-background px-3 text-sm hover:bg-muted/40 disabled:opacity-60"
-                            disabled={update.isPending}
+                            disabled={disableShipped}
                             onClick={() => onChangeStatus('shipped')}
                         >
                             출고 처리
@@ -135,7 +173,7 @@ export default function OrderDetailPage() {
 
                         <button
                             className="h-10 rounded-md border bg-background px-3 text-sm hover:bg-muted/40 disabled:opacity-60"
-                            disabled={update.isPending}
+                            disabled={isBusy}
                             onClick={() => toast.message('취소/환불 플로우는 구현 중입니다.')}
                         >
                             취소/환불

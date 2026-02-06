@@ -6,12 +6,11 @@ import { toast } from 'sonner';
 import { useOrdersQueryState } from '@/features/orders/useOrdersQueryState';
 import { useOrders } from '@/features/orders/useOrders';
 import { useDebouncedValue } from '@/shared/hooks/useDebouncedValue';
-import { ORDERS_QUERY_DEFAULT as DEFAULT, ORDERS_PAGE_SIZE_OPTIONS, type OrderStatus } from '@/shared/constants/orders';
+import { ORDERS_QUERY_DEFAULT as DEFAULT, ORDERS_PAGE_SIZE_OPTIONS, Order } from '@/shared/constants/orders';
 import { formatKRW } from '@/lib/format';
 import { StatusBadge } from '@/features/orders/components/StatusBadge';
-import { useBulkUpdateOrderStatus } from '@/features/orders/useBulkUpdateOrderStatus';
 import { useRole } from '@/shared/providers/RoleProvider';
-import { Order } from '@/lib/mockDb/ordersDb';
+import { useUpdateBulkOrderStatus } from '@/features/orders/useBulkUpdateOrderStatus';
 
 export default function OrdersPage() {
     const router = useRouter();
@@ -28,7 +27,7 @@ export default function OrdersPage() {
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
     // bulk mutation
-    const bulk = useBulkUpdateOrderStatus();
+    const bulk = useUpdateBulkOrderStatus();
     const isBulkLoading = bulk.isPending;
 
     // 권한
@@ -93,10 +92,10 @@ export default function OrdersPage() {
 
     const onBulkShip = () => {
         const ids = Array.from(selectedIds);
-        if (ids.length === 0 || isBulkLoading) return;
+        if (ids.length === 0 || bulk.isPending) return;
 
         bulk.mutate(
-            { ids, status: 'shipped' as OrderStatus },
+            { ids, status: 'shipped' },
             {
                 onSuccess: (json) => {
                     const ok = json.updated.length;
@@ -111,11 +110,9 @@ export default function OrdersPage() {
                             .filter(Boolean)
                             .join(' · '),
                     });
-
                     setSelectedIds(new Set());
                 },
-
-                onError: () => toast.error('처리에 실패했어요'),
+                onError: (e) => toast.error(e instanceof Error ? e.message : '처리에 실패했어요'),
             }
         );
     };

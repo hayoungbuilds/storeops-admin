@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
-import type { OrdersQuery } from '@/features/orders/useOrdersQueryState';
-import { Order } from '@/lib/mockDb/ordersDb';
+import type { OrdersQuery } from './useOrdersQueryState';
+import { ordersKeys } from './queries';
+import { OrdersListResponse } from '@/shared/constants/orders';
 
 export function useOrders(qs: OrdersQuery) {
     return useQuery({
-        queryKey: ['orders', qs.q, qs.status, qs.channel, qs.page, qs.pageSize, qs.sort],
+        queryKey: ordersKeys.list(qs),
         queryFn: async () => {
             const params = new URLSearchParams({
                 q: qs.q,
@@ -17,11 +18,7 @@ export function useOrders(qs: OrdersQuery) {
 
             const res = await fetch(`/api/orders?${params.toString()}`);
             if (!res.ok) throw new Error('Failed to fetch orders');
-
-            return res.json() as Promise<{
-                items: Order[];
-                meta: { total: number; page: number; pageSize: number; totalPages: number };
-            }>;
+            return res.json() as Promise<OrdersListResponse>;
         },
         placeholderData: (prev) => prev,
     });

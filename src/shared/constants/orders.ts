@@ -20,3 +20,20 @@ export type OrdersPageSize = (typeof ORDERS_PAGE_SIZE_OPTIONS)[number];
 export const ORDERS_SORT_OPTIONS = ['time_desc', 'amount_desc', 'amount_asc'] as const;
 export type OrdersSort = (typeof ORDERS_SORT_OPTIONS)[number];
 
+
+export type Order = {
+    id: string;
+    time: string;
+    customer: string;
+    channel: OrderChannel;
+    status: OrderStatus;
+    amount: number;
+  };
+  
+  export type OrdersListResponse = {
+    items: Order[];
+    meta: { total: number; page: number; pageSize: number; totalPages: number };
+  };
+  
+  export type OrderDetailResponse = { item: Order | null };
+  
