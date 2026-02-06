@@ -159,7 +159,7 @@ export default function InventoryPage() {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="h-full min-h-0 flex flex-col gap-6">
             <div className="space-y-1">
                 <h1 className="text-xl font-semibold">Inventory</h1>
                 <p className="text-sm text-muted-foreground">품절/임박 SKU를 빠르게 확인합니다.</p>
@@ -217,7 +217,7 @@ export default function InventoryPage() {
                     </div>
                 </div>
             ) : (
-                <div className="overflow-hidden rounded-lg border bg-background">
+                <div className="overflow-y-auto rounded-lg border bg-background">
                     <div className="grid grid-cols-12 border-b px-4 py-3 text-xs text-muted-foreground">
                         <div className="col-span-3">SKU</div>
                         <div className="col-span-4">상품</div>
@@ -226,7 +226,7 @@ export default function InventoryPage() {
                         <div className="col-span-2 text-right">조정</div>
                     </div>
 
-                    <div className="divide-y">
+                    <div className="min-h-0 flex-1 overflow-y-auto divide-y">
                         {items.map((x) => (
                             <div
                                 key={x.sku}

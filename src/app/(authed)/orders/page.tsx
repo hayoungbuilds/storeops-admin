@@ -121,7 +121,7 @@ export default function OrdersPage() {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="h-full min-h-0 flex flex-col gap-6">
             <div className="space-y-1">
                 <h1 className="text-xl font-semibold">Orders</h1>
                 <p className="text-sm text-muted-foreground">URL과 상태를 동기화한 주문 리스트</p>
@@ -240,7 +240,7 @@ export default function OrdersPage() {
                         </div>
                     </div>
                 ) : (
-                    <div className="overflow-hidden rounded-lg border bg-background">
+                    <div className="overflow-auto rounded-lg border bg-background">
                         <div className="flex items-center justify-between border-b px-4 py-3 text-sm">
                             <label className="flex items-center gap-2 text-muted-foreground">
                                 <input
@@ -295,7 +295,7 @@ export default function OrdersPage() {
                             </div>
                         </div>
 
-                        <div className="divide-y">
+                        <div className="min-h-0 flex-1 overflow-y-auto divide-y">
                             {data.items.map((o: Order) => (
                                 <div
                                     key={o.id}
