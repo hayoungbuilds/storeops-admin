@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Order, OrderStatus, OrdersListResponse } from '@/shared/constants/orders';
 import { ordersKeys } from './queries';
 import { apiFetch } from '@/lib/fetcher';
+import { dashboardKeys } from '../dashboard/queries';
 
 type Payload = { id: string; status: OrderStatus };
 type ResponseBody = { item: Order };
@@ -50,7 +51,7 @@ export function useUpdateOrderStatus() {
         onSettled: (_data, _err, vars) => {
             qc.invalidateQueries({ queryKey: ordersKeys.detail(vars.id) });
             qc.invalidateQueries({ queryKey: ordersKeys.lists() });
-            qc.invalidateQueries({ queryKey: ['dashboard'] });
+            qc.invalidateQueries({ queryKey: dashboardKeys.all });
         },
     });
 }

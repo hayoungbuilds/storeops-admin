@@ -1,11 +1,14 @@
 'use client';
 
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { formatKRW } from '@/lib/format';
 import { StatusBadge } from '@/features/orders/components/StatusBadge';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar } from 'recharts';
-import { useMemo, useState } from 'react';
+import { dashboardKeys } from '@/features/dashboard/queries';
+
+type DashboardRange = 'today' | '7d';
 
 type DashboardResponse = {
     kpi: { total: number; preparing: number; shipped: number; todaySales: number };
@@ -32,27 +35,47 @@ function KpiCard({ label, value }: { label: string; value: string | number }) {
     );
 }
 
-export default function DashboardPage() {
-    const [range, setRange] = useState<'today' | '7d'>('today');
+function fillHourlySales(raw: Array<{ hour: string; sales: number }>) {
+    const map = new Map(raw.map((d) => [d.hour, d.sales]));
 
-    const { data, isLoading, isError, refetch } = useQuery({
-        queryKey: ['dashboard', range],
-        queryFn: async () => {
-            const res = await fetch(`/api/dashboard?range=${range}`);
+    return Array.from({ length: 24 }, (_, h) => {
+        const key = `${String(h).padStart(2, '0')}:00`; // "00:00"~"23:00"
+        return { hour: key, sales: map.get(key) ?? 0 };
+    });
+}
+
+function statusLabel(s: string) {
+    const m: Record<string, string> = {
+        paid: '결제',
+        preparing: '준비',
+        shipped: '출고',
+        cancelled: '취소',
+        refunded: '환불',
+    };
+    return m[s] ?? s;
+}
+
+export default function DashboardPage() {
+    const [range, setRange] = useState<DashboardRange>('today');
+    const TICKS = ['00:00', '06:00', '12:00', '18:00', '23:00'];
+
+    const { data, isLoading, isError, refetch, isFetching } = useQuery({
+        queryKey: dashboardKeys.byRange(range),
+        queryFn: async ({ queryKey }) => {
+            const [, r] = queryKey as ReturnType<typeof dashboardKeys.byRange>;
+            const res = await fetch(`/api/dashboard?range=${r}`);
             if (!res.ok) throw new Error('Failed');
             return (await res.json()) as DashboardResponse;
         },
+        placeholderData: (prev) => prev,
+        staleTime: 10_000,
     });
 
-    const HOURS = Array.from({ length: 24 }, (_, h) => String(h).padStart(2, '0'));
+    const salesData = useMemo(() => {
+        if (!data) return [];
 
-    function normalizeSalesByHour(raw: Array<{ hour: string; sales: number }>) {
-        const map = new Map(raw.map((r) => [String(r.hour).slice(0, 2), Number(r.sales) || 0] as const));
-
-        return HOURS.map((hh) => ({ hour: hh, sales: map.get(hh) ?? 0 }));
-    }
-
-    const salesByHour = useMemo(() => normalizeSalesByHour(data?.charts.salesByHour ?? []), [data]);
+        return fillHourlySales(data.charts.salesByHour);
+    }, [data]);
 
     if (isLoading) {
         return (
@@ -85,8 +108,13 @@ export default function DashboardPage() {
     return (
         <div className="space-y-6">
             <div className="space-y-1">
-                <h1 className="text-xl font-semibold">Dashboard</h1>
-                <p className="text-sm text-muted-foreground">운영 지표와 최근 주문을 한 눈에</p>
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-xl font-semibold">Dashboard</h1>
+                        <p className="text-sm text-muted-foreground">운영 지표와 최근 주문을 한 눈에</p>
+                    </div>
+                    {isFetching && <span className="text-xs text-muted-foreground">업데이트 중…</span>}
+                </div>
             </div>
 
             <div className="grid gap-3 md:grid-cols-4">
@@ -124,25 +152,29 @@ export default function DashboardPage() {
 
                     <div className="h-56">
                         <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={salesByHour}>
+                            <LineChart data={salesData}>
                                 <XAxis
                                     padding={{ left: 16, right: 16 }}
                                     dataKey="hour"
                                     tickLine={false}
                                     axisLine={false}
                                     interval={0}
-                                    tickFormatter={(h) => (Number(h) % 6 === 0 ? `${h}:00` : '')}
+                                    tick={{ fontSize: 12 }}
+                                    ticks={TICKS}
+                                    tickFormatter={(h: string) => `${h.split(':')[0]}시`}
                                 />
                                 <Tooltip
                                     formatter={(v: any) => formatKRW(Number(v))}
-                                    labelFormatter={(label) => `시간: ${label}:00`}
+                                    labelFormatter={(label) => `시간: ${label}`}
                                 />
                                 <YAxis hide />
                                 <Line type="monotone" dataKey="sales" dot={false} strokeWidth={2} />
                             </LineChart>
                         </ResponsiveContainer>
                     </div>
-                    <p className="mt-2 text-xs text-muted-foreground">데모 데이터 기준 시간대별 매출 합입니다.</p>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                        고정된 시간 버킷(00~23)에 맞춰 빈 구간은 0으로 채웁니다.
+                    </p>
                 </div>
 
                 <div className="rounded-lg border bg-background p-4">
@@ -151,18 +183,15 @@ export default function DashboardPage() {
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={data.charts.ordersByStatus}>
                                 <CartesianGrid strokeDasharray="3 3" />
-
                                 <XAxis
                                     dataKey="status"
-                                    interval={0}
                                     tickLine={false}
                                     axisLine={false}
-                                    tick={{ fontSize: 12 }}
+                                    interval={0}
+                                    tickFormatter={statusLabel}
                                 />
-
                                 <YAxis tickLine={false} axisLine={false} />
                                 <Tooltip />
-
                                 <Bar dataKey="count" />
                             </BarChart>
                         </ResponsiveContainer>

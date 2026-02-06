@@ -3,6 +3,7 @@ import type { Order, OrdersListResponse } from '@/shared/constants/orders';
 import type { OrderStatus } from '@/shared/constants/orders';
 import { ordersKeys } from '@/features/orders/queries';
 import { apiFetch } from '@/lib/fetcher';
+import { dashboardKeys } from '../dashboard/queries';
 
 type BulkPayload = {
     ids: string[];
@@ -84,7 +85,7 @@ export function useUpdateBulkOrderStatus() {
         onSettled: async () => {
             await qc.invalidateQueries({ queryKey: ordersKeys.lists() });
             await qc.invalidateQueries({ queryKey: ordersKeys.details() });
-            await qc.invalidateQueries({ queryKey: ['dashboard'] });
+            qc.invalidateQueries({ queryKey: dashboardKeys.all });
         },
     });
 }
